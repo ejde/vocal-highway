@@ -1,0 +1,38 @@
+# Virtual Environment
+.venv/
+venv/
+env/
+ENV/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.pytest_cache/
+
+# Audio Files & Download Caches (Do not commit large binary audio)
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.ogg
+separated/
+audio_downloads/
+
+# Generated user charts (keep copyrighted lyrics/melody out of git)
+song_chart.json
+song_chart.txt
+
+# Test outputs & temporary files
+test_*.txt
+*.tmp
+
+# System & OS Files
+.DS_Store
+Thumbs.db
+
+# IDE & Editor configs
+.vscode/
+.idea/
+*.swp

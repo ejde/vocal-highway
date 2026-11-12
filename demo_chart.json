@@ -1,0 +1,63 @@
+{
+  "title": "Amazing Grace (Demo)",
+  "artist": "Traditional",
+  "duration": 52.0,
+  "lines": [
+    {
+      "section": "Verse 1 — Line 1",
+      "fullLine": "Amazing grace how sweet the sound",
+      "startTime": 2.0,
+      "words": [
+        { "text": "A-", "start": 2.0, "dur": 0.45, "midi": 60 },
+        { "text": "ma-", "start": 2.5, "dur": 0.95, "midi": 65 },
+        { "text": "zing", "start": 3.5, "dur": 0.45, "midi": 69 },
+        { "text": "grace,", "start": 4.0, "dur": 1.20, "midi": 65 },
+        { "text": "how", "start": 5.4, "dur": 0.45, "midi": 69 },
+        { "text": "sweet", "start": 5.9, "dur": 0.90, "midi": 67 },
+        { "text": "the", "start": 6.9, "dur": 0.45, "midi": 65 },
+        { "text": "sound", "start": 7.4, "dur": 1.80, "midi": 62 }
+      ]
+    },
+    {
+      "section": "Verse 1 — Line 2",
+      "fullLine": "That saved a wretch like me",
+      "startTime": 10.5,
+      "words": [
+        { "text": "That", "start": 10.5, "dur": 0.45, "midi": 60 },
+        { "text": "saved", "start": 11.0, "dur": 0.95, "midi": 65 },
+        { "text": "a", "start": 12.0, "dur": 0.45, "midi": 69 },
+        { "text": "wretch", "start": 12.5, "dur": 1.20, "midi": 65 },
+        { "text": "like", "start": 13.9, "dur": 0.50, "midi": 69 },
+        { "text": "me", "start": 14.5, "dur": 2.20, "midi": 72 }
+      ]
+    },
+    {
+      "section": "Verse 1 — Line 3",
+      "fullLine": "I once was lost but now am found",
+      "startTime": 18.0,
+      "words": [
+        { "text": "I", "start": 18.0, "dur": 0.45, "midi": 69 },
+        { "text": "once", "start": 18.5, "dur": 0.90, "midi": 72 },
+        { "text": "was", "start": 19.5, "dur": 0.45, "midi": 69 },
+        { "text": "lost,", "start": 20.0, "dur": 1.20, "midi": 65 },
+        { "text": "but", "start": 21.4, "dur": 0.45, "midi": 69 },
+        { "text": "now", "start": 21.9, "dur": 0.90, "midi": 67 },
+        { "text": "am", "start": 22.9, "dur": 0.45, "midi": 65 },
+        { "text": "found", "start": 23.4, "dur": 1.80, "midi": 62 }
+      ]
+    },
+    {
+      "section": "Verse 1 — Line 4",
+      "fullLine": "Was blind but now I see",
+      "startTime": 26.5,
+      "words": [
+        { "text": "Was", "start": 26.5, "dur": 0.45, "midi": 60 },
+        { "text": "blind,", "start": 27.0, "dur": 0.95, "midi": 65 },
+        { "text": "but", "start": 28.0, "dur": 0.45, "midi": 69 },
+        { "text": "now", "start": 28.5, "dur": 1.10, "midi": 65 },
+        { "text": "I", "start": 29.8, "dur": 0.50, "midi": 62 },
+        { "text": "see", "start": 30.4, "dur": 2.40, "midi": 60 }
+      ]
+    }
+  ]
+}
