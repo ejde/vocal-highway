@@ -124,11 +124,11 @@ python extract_vocal_chart.py --url "https://www.youtube.com/watch?v=..." --open
 python extract_vocal_chart.py --audio song.mp3 --max-duration 5:30 --pitch-tracker crepe --open
 ```
 
-The script outputs:
-- `song_chart.json` — Structured highway chart with melisma sub-notes
-- `song_chart.txt` — Standard UltraStar format chart
-- `separated/htdemucs/<song>/vocals.wav` — Clean isolated vocal guide stem
-- `separated/htdemucs/<song>/no_vocals.wav` — Instrumental backing stem
+The script organizes each extracted song into `charts/<song-slug>/`:
+- `charts/<song-slug>/<song-slug>.json` — Structured highway chart with melisma sub-notes
+- `charts/<song-slug>/<song-slug>.txt` — Standard UltraStar format chart
+- `charts/<song-slug>/vocals.wav` — Clean isolated vocal guide stem
+- `charts/<song-slug>/no_vocals.wav` — Instrumental backing stem
 
 ---
 
@@ -139,7 +139,7 @@ The script outputs:
 | `--audio` | `str` | `None` | Path to local song audio file (`.mp3` or `.wav`). |
 | `--url` | `str` | `None` | Online URL (e.g. YouTube) to download via `yt-dlp`. |
 | `--lyrics` | `str` | `None` | Optional lyrics `.txt` file to format line breaks and phrases. |
-| `--out` | `str` | `song_chart.json` | Path for exported JSON song chart. |
+| `--out` | `str` | `charts/<slug>/<slug>.json` | Optional custom path for exported JSON song chart. |
 | `--format` | `str` | `all` | Export formats: `json`, `ultrastar`, or `all`. |
 | `--pitch-tracker` | `str` | `pyin` | Pitch algorithm: `pyin` (pYIN) or `crepe` (torchcrepe). |
 | `--artist` | `str` | `None` | Artist name for metadata and UltraStar headers. |

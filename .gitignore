@@ -21,6 +21,7 @@ separated/
 audio_downloads/
 
 # Generated user charts (keep copyrighted lyrics/melody out of git)
+charts/
 song_chart.json
 song_chart.txt
 

@@ -53,8 +53,8 @@ def parse_args():
     parser.add_argument(
         "--out",
         type=str,
-        default="song_chart.json",
-        help="Path to output JSON chart file (default: song_chart.json).",
+        default=None,
+        help="Path to output JSON chart file (default: charts/<song-slug>/<song-slug>.json).",
     )
     parser.add_argument(
         "--format",
@@ -124,6 +124,7 @@ def download_audio_from_url(url: str, output_dir: Path) -> Path:
     log(f"Downloading audio from URL: {url} ...")
     ydl_opts = {
         "format": "bestaudio/best",
+        "noplaylist": True,
         "outtmpl": str(output_dir / "%(title)s.%(ext)s"),
         "postprocessors": [
             {
@@ -716,7 +717,6 @@ def main():
         log(f"Warning: lyrics file not found at {lyrics_path}. Proceeding without it.")
         lyrics_path = None
 
-    out_path = Path(args.out).resolve()
     max_duration = parse_time_str(args.max_duration) if args.max_duration else None
 
     # Trim audio file if requested
@@ -811,6 +811,12 @@ def main():
     title = raw_title.replace("_", " ").replace("-", " ").title()
     artist_name = args.artist or "Artist"
 
+    slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-") or "song"
+    if args.out:
+        out_path = Path(args.out).resolve()
+    else:
+        out_path = (Path("charts") / slug / f"{slug}.json").resolve()
+
     chart_payload = {
         "title": title,
         "artist": artist_name,
@@ -819,8 +825,8 @@ def main():
     }
 
     # Export formats
+    out_path.parent.mkdir(parents=True, exist_ok=True)
     if args.format in ["json", "all"]:
-        out_path.parent.mkdir(parents=True, exist_ok=True)
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(chart_payload, f, indent=2, ensure_ascii=False)
         log(f"Successfully generated song chart with {len(lines)} lines -> {out_path}")
@@ -830,9 +836,21 @@ def main():
         export_ultrastar_format(
             chart_payload,
             txt_out_path,
-            audio_filename=audio_path.name,
+            audio_filename=f"{slug}{audio_path.suffix}",
             artist=artist_name,
         )
+
+    # Copy stems & source audio into the organized song folder when using charts/<slug>/
+    if not args.out:
+        no_vocals_wav = vocals_wav.parent / "no_vocals.wav"
+        if vocals_wav.is_file():
+            shutil.copy2(vocals_wav, out_path.parent / "vocals.wav")
+        if no_vocals_wav.is_file():
+            shutil.copy2(no_vocals_wav, out_path.parent / "no_vocals.wav")
+        target_audio = out_path.parent / f"{slug}{audio_path.suffix}"
+        if audio_path.is_file() and audio_path.resolve() != target_audio.resolve():
+            shutil.copy2(audio_path, target_audio)
+        log(f"Organized song bundle in -> {out_path.parent}")
 
     # Open in browser if requested
     if args.open:
