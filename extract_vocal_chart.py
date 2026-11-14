@@ -286,14 +286,130 @@ def isolate_vocals(audio_path: Path, demucs_device: str, demucs_model: str) -> P
     return cached_vocals
 
 
+def build_lyrics_segments_from_alignment(transcribed_segments: list, lyrics_file: Path) -> list:
+    """
+    Anchor user-provided lyrics lines to WhisperX transcribed word timestamps using
+    difflib.SequenceMatcher, producing time-bounded segments for phonetic forced alignment.
+    """
+    import difflib
+
+    def norm(w: str) -> str:
+        return re.sub(r"[^a-z0-9]", "", w.lower())
+
+    with open(lyrics_file, "r", encoding="utf-8") as f:
+        raw_lines = [line.strip() for line in f.readlines()]
+
+    section_keywords = {"intro", "verse", "chorus", "outro", "bridge", "pre-chorus", "hook", "refrain"}
+    current_section = "Line 1"
+    user_lines = []
+    for raw in raw_lines:
+        if not raw:
+            continue
+        if raw.startswith("[") and raw.endswith("]"):
+            current_section = raw[1:-1].strip()
+            continue
+        if raw.lower().rstrip(":1234567890 ") in section_keywords and len(raw.split()) <= 2:
+            current_section = raw.title()
+            continue
+        user_lines.append((current_section, raw))
+
+    if not user_lines:
+        return []
+
+    # Flatten user words
+    user_words = []
+    line_word_ranges = []
+    for sec_name, text in user_lines:
+        tokens = text.split()
+        if not tokens:
+            continue
+        start_idx = len(user_words)
+        for tok in tokens:
+            user_words.append(norm(tok))
+        line_word_ranges.append((sec_name, text, start_idx, len(user_words) - 1))
+
+    # Flatten transcribed words
+    trans_words = []
+    for seg in transcribed_segments:
+        for w in seg.get("words", []):
+            wt = w.get("word", "").strip()
+            ws = w.get("start")
+            we = w.get("end")
+            if wt and ws is not None and we is not None:
+                trans_words.append((norm(wt), float(ws), float(we)))
+
+    if not trans_words or not user_words:
+        return []
+
+    trans_norms = [t[0] for t in trans_words]
+    matcher = difflib.SequenceMatcher(None, user_words, trans_norms, autojunk=False)
+    word_times = [None] * len(user_words)
+
+    for block in matcher.get_matching_blocks():
+        for offset in range(block.size):
+            u_i = block.a + offset
+            t_i = block.b + offset
+            word_times[u_i] = (trans_words[t_i][1], trans_words[t_i][2])
+
+    # Interpolate any unmatched words between nearest anchored neighbors
+    anchored = [i for i, wt in enumerate(word_times) if wt is not None]
+    if not anchored:
+        return []
+
+    # Fill leading unmatched words before first anchor
+    first_a = anchored[0]
+    for i in range(first_a):
+        t_start = max(0.0, word_times[first_a][0] - (first_a - i) * 0.35)
+        word_times[i] = (t_start, t_start + 0.3)
+
+    # Fill trailing unmatched words after last anchor
+    last_a = anchored[-1]
+    for i in range(last_a + 1, len(user_words)):
+        t_start = word_times[last_a][1] + (i - last_a - 1) * 0.35
+        word_times[i] = (t_start, t_start + 0.3)
+
+    # Fill interior gaps linearly
+    for idx in range(len(anchored) - 1):
+        a1, a2 = anchored[idx], anchored[idx + 1]
+        if a2 - a1 > 1:
+            gap_start = word_times[a1][1]
+            gap_end = word_times[a2][0]
+            count = a2 - a1 - 1
+            step = max(0.05, (gap_end - gap_start) / count)
+            for k in range(1, count + 1):
+                s = gap_start + (k - 1) * step
+                word_times[a1 + k] = (s, s + step)
+
+    # Build segments for whisperx.align
+    user_segments = []
+    for idx, (sec_name, text, s_i, e_i) in enumerate(line_word_ranges):
+        seg_start = max(0.0, word_times[s_i][0] - 0.35)
+        seg_end = max(seg_start + 0.5, word_times[e_i][1] + 0.35)
+        if user_segments and seg_start < user_segments[-1]["end"]:
+            mid = (user_segments[-1]["end"] + seg_start) / 2.0
+            user_segments[-1]["end"] = max(user_segments[-1]["start"] + 0.2, mid)
+            seg_start = mid
+        user_segments.append({
+            "text": text,
+            "start": round(seg_start, 3),
+            "end": round(seg_end, 3),
+            "section": sec_name,
+        })
+
+    return user_segments
+
+
 def run_forced_alignment(
     vocals_path: Path,
     whisper_model_name: str,
     whisper_device: str,
     compute_type: str,
+    lyrics_path: Path = None,
 ):
     """
     Step 2: Transcribe and align word timestamps with WhisperX.
+    If lyrics_path is provided, anchors user lyrics to transcribed timestamps
+    and re-runs phonetic forced alignment on the exact user text.
     """
     import whisperx
 
@@ -327,6 +443,25 @@ def run_forced_alignment(
         whisper_device,
         return_char_alignments=False,
     )
+
+    if lyrics_path:
+        log(f"Anchoring and force-aligning exact user lyrics from: {lyrics_path}")
+        user_segments = build_lyrics_segments_from_alignment(
+            aligned_result.get("segments", []),
+            lyrics_path,
+        )
+        if user_segments:
+            aligned_result = whisperx.align(
+                user_segments,
+                align_model,
+                metadata,
+                audio,
+                whisper_device,
+                return_char_alignments=False,
+            )
+            # Preserve section metadata on aligned segments
+            for seg, u_seg in zip(aligned_result.get("segments", []), user_segments):
+                seg["section"] = u_seg.get("section", "Line")
 
     return aligned_result, audio
 
@@ -737,6 +872,7 @@ def main():
         args.whisper_model,
         whisper_dev,
         compute_type,
+        lyrics_path=lyrics_path,
     )
 
     # Flatten and validate aligned words
